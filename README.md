@@ -19,13 +19,13 @@ For Parsec users with a 4+ player group, host will reserve 2 Xinput slots 0 and 
 1) Host can flip clients to Dualshock 4 instead of Xbox in Parsec host settings
 2) Host can install the program Hidhide (https://github.com/nefarius/HidHide) to "hide" the host physical gamepad instance from whichever program so the virtual gamepad instance begins at 0 instead of 1.
 
-Usage:
+Usage:  
 ./Smash-Bufferx64.exe <milliseconds value>
 
-How to Build:
--Windows Visual Studio Build tool installation (https://visualstudio.microsoft.com/downloads/)-->select C++ desktop development-->tick boxes for MSVC Build Tools for x64/x86 (latest), Windows 11 SDK (10.0.xxxxx), C++ CMake tools for Windows, Testing tools core features - Build Tools, MSVC AddressSanitizer
+How to Build:  
+-Windows Visual Studio Build tool installation (https://visualstudio.microsoft.com/downloads/) -->select C++ desktop development-->tick boxes for MSVC Build Tools for x64/x86 (latest), Windows 11 SDK (10.0.xxxxx), C++ CMake tools for Windows, Testing tools core features - Build Tools, MSVC AddressSanitizer
 
--Using x64 Native Tools Command Prompt for VS, run the following compile command at project main dir:
+-Using x64 Native Tools Command Prompt for VS, run the following compile command at project main dir:  
 cl /EHsc src\main.cpp /Ithird_party\vigem\x64-windows-static\include /link /LIBPATH:third_party\vigem\x64-windows-static\lib ViGEmClient.lib setupapi.lib Xinput.lib winmm.lib /OUT:build\Smash-Bufferx64.exe
 
 
