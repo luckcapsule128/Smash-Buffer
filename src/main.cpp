@@ -1,0 +1,124 @@
+#include <windows.h>
+#include <mmsystem.h>
+#include <Xinput.h>
+#include <ViGEm/Client.h>
+#include <iostream>
+#include <queue>
+#include <chrono>
+#include <atomic>
+
+//using Clock = std::chrono::high_resolution_clock; see L14
+
+struct TimedState {
+    XINPUT_STATE state;
+    std::chrono::time_point<std::chrono::high_resolution_clock> timestamp; // using long form for clarity instead of alternative syntax ie Clock::time_point
+};
+
+std::atomic<bool> running = true;
+
+// Ctrl+C or closing console will allow vigem and clocks to resolve
+BOOL WINAPI HandlerRoutine(DWORD signal) {
+    switch (signal) {
+        case CTRL_C_EVENT:
+        case CTRL_CLOSE_EVENT:
+            running = false;  
+            return TRUE;      
+        default:
+            return FALSE;     
+    }
+}
+
+int main(int argc, char* argv[])
+{
+    if (argc < 2) {
+        std::cout << "Usage: ./Smash-Buffer.exe <delay_ms>\n";
+        return 1;
+    }
+
+    int delayMs = atoi(argv[1]);
+    if (delayMs < 0) delayMs = 0;
+    if (delayMs > 500)
+    {
+        std::cout << "Use a value 500 or below.\n";
+        return 1;
+    }
+
+    std::cout << "Delay: " << delayMs << " ms. To exit, use ctrl+c\n";
+
+    // Enable high-resolution timer
+    timeBeginPeriod(1);
+
+    SetConsoleCtrlHandler(HandlerRoutine, TRUE);
+
+    // --- ViGEm init ---
+    PVIGEM_CLIENT client = vigem_alloc();
+    if (!client || !VIGEM_SUCCESS(vigem_connect(client))) {
+        std::cerr << "ViGEm init failed. Did you download and install Windows vigem drivers?\n";
+        timeEndPeriod(1);
+        return 1;
+    }
+
+    PVIGEM_TARGET target = vigem_target_x360_alloc();
+    if (!VIGEM_SUCCESS(vigem_target_add(client, target))) {
+        std::cerr << "Failed to create virtual controller\n";
+        vigem_free(client);
+        timeEndPeriod(1);
+        return 1;
+    }
+
+    std::queue<TimedState> buffer;
+
+    // Outer loop, one millisecond means one state
+    while (running)
+    {
+        // Capture input
+        XINPUT_STATE state{};
+        if (XInputGetState(0, &state) == ERROR_SUCCESS)
+        {
+            buffer.push({ state, std::chrono::high_resolution_clock::now() });
+        }
+
+        // Inner Loop, loops within millisecond interval
+        while (!buffer.empty())
+        {
+            auto& front = buffer.front(); // TimedState& front = buffer.front();
+                    
+            auto now = std::chrono::high_resolution_clock::now(); // std::chrono::time_point<std::chrono::high_resolution_clock> now = std::chrono::high_resolution_clock::now();
+
+            double elapsed = std::chrono::duration<double, std::milli>(
+                now - front.timestamp).count();
+
+            if (elapsed >= delayMs)
+            {
+                XUSB_REPORT report{};
+                report.wButtons = front.state.Gamepad.wButtons;
+                report.bLeftTrigger = front.state.Gamepad.bLeftTrigger;
+                report.bRightTrigger = front.state.Gamepad.bRightTrigger;
+                report.sThumbLX = front.state.Gamepad.sThumbLX;
+                report.sThumbLY = front.state.Gamepad.sThumbLY;
+                report.sThumbRX = front.state.Gamepad.sThumbRX;
+                report.sThumbRY = front.state.Gamepad.sThumbRY;
+
+                vigem_target_x360_update(client, target, report);
+
+                buffer.pop();
+            }
+            else {
+                break;
+            }
+        }
+
+        Sleep(1);
+    }
+
+    // --- Cleanup ---
+    vigem_target_remove(client, target);
+    vigem_target_free(target);
+    vigem_disconnect(client);
+    vigem_free(client);
+
+    timeEndPeriod(1);
+
+    std::cout << "Exited cleanly.\n";
+    return 0;
+}
