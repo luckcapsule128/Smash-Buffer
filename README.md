@@ -15,12 +15,12 @@ https://gamepad-tester.net/
 
 It'll create Player #1 and #2 instances.  Assuming you have stable deadzones, a button push will generate a timestamp value for both #1 and #2.  Subtract these two values to get the input value you entered in the program. It consistently appears to post ~4-6ms above the user value which may be browser-related.  Locally, this does not occur.
 
-For Parsec users with a 4+ player group, host will reserve 2 Xinput slots 0 and 1, leaving the >=4th joiner without an Xinput assignment since Windows appears to limit controller indices 0-3. In that case:
+For Parsec users with a 4+ player group, host will reserve 2 Xinput slots 0 and 1, leaving the >=4th joiner without an Xinput assignment since Windows appears to limit controller to 4 players. In that case:
 1) Host can flip clients to Dualshock 4 instead of Xbox in Parsec host settings
 2) Host can install the program Hidhide (https://github.com/nefarius/HidHide) to "hide" the host physical gamepad instance from whichever program so the virtual gamepad instance begins at 0 instead of 1.
 
 Usage:  
-./Smash-Bufferx64.exe <milliseconds value>
+./Smash-Bufferx64.exe -enter millisecond value here-
 
 How to Build:  
 -Windows Visual Studio Build tool installation (https://visualstudio.microsoft.com/downloads/) -->select C++ desktop development-->tick boxes for MSVC Build Tools for x64/x86 (latest), Windows 11 SDK (10.0.xxxxx), C++ CMake tools for Windows, Testing tools core features - Build Tools, MSVC AddressSanitizer

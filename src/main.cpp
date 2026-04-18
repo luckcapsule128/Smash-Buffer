@@ -66,6 +66,20 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    Sleep(100); //Sleep allowing enough time for virtual xinput to initialize for XinputGetState below to find it
+
+
+    for (DWORD i = 0; i < XUSER_MAX_COUNT; i++) 
+    {
+        XINPUT_STATE state;
+        ZeroMemory(&state, sizeof(state));
+        DWORD result = XInputGetState(i, &state);
+        if (result == ERROR_SUCCESS) 
+        {
+            std::cout << "Controller " << i << " is connected.\n";
+        }
+    }
+
     std::queue<TimedState> buffer;
 
     // Outer loop, one millisecond means one state
