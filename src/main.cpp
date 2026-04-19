@@ -7,11 +7,11 @@
 #include <chrono>
 #include <atomic>
 
-//using Clock = std::chrono::high_resolution_clock; see L14
+//using Clock = std::chrono::steady_clock; see L14
 
 struct TimedState {
     XINPUT_STATE state;
-    std::chrono::time_point<std::chrono::high_resolution_clock> timestamp; // using long form for clarity instead of alternative syntax ie Clock::time_point
+    std::chrono::time_point<std::chrono::steady_clock> timestamp; // using long form for clarity instead of alternative syntax ie Clock::time_point
 };
 
 std::atomic<bool> running = true;
@@ -66,8 +66,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    Sleep(100); //Sleep allowing enough time for virtual xinput to initialize for XinputGetState below to find it
-
+    Sleep(100); // Sleep allowing enough time for virtual xinput to initialize for XinputGetState below to find it
 
     for (DWORD i = 0; i < XUSER_MAX_COUNT; i++) 
     {
@@ -89,16 +88,17 @@ int main(int argc, char* argv[])
         XINPUT_STATE state{};
         if (XInputGetState(0, &state) == ERROR_SUCCESS)
         {
-            buffer.push({ state, std::chrono::high_resolution_clock::now() });
+            buffer.push({ state, std::chrono::steady_clock::now() }); // Record timestamp
         }
 
-        // Inner Loop, loops within millisecond interval
+        // Inner loop, loops within millisecond interval
         while (!buffer.empty())
         {
             auto& front = buffer.front(); // TimedState& front = buffer.front();
                     
-            auto now = std::chrono::high_resolution_clock::now(); // std::chrono::time_point<std::chrono::high_resolution_clock> now = std::chrono::high_resolution_clock::now();
+            auto now = std::chrono::steady_clock::now(); // std::chrono::time_point<std::chrono::steady_clock> now = std::chrono::steady_clock::now();
 
+           
             double elapsed = std::chrono::duration<double, std::milli>(
                 now - front.timestamp).count();
 
