@@ -6,12 +6,31 @@
 #include <queue>
 #include <chrono>
 #include <atomic>
+#include <thread>
+#define PERIOD 1
+#define TOLERANCE 0.02
 
-//using Clock = std::chrono::steady_clock; see L14
+//using Clock = std::chrono::steady_clock; 
+
+//using technique robustSleep from https://blog.bearcats.nl/perfect-sleep-function/
+void robustSleep(double seconds) {
+    auto t0 = std::chrono::high_resolution_clock::now();
+    auto target = t0 + std::chrono::nanoseconds(int64_t(seconds * 1e9));
+
+    // sleep
+    double ms = seconds * 1000 - (PERIOD + TOLERANCE);
+    int ticks = (int)(ms / PERIOD);
+    if (ticks > 0)
+        std::this_thread::sleep_for(std::chrono::milliseconds(ticks * PERIOD));
+
+    // spin
+    while (std::chrono::high_resolution_clock::now() < target)
+        YieldProcessor();
+}
 
 struct TimedState {
     XINPUT_STATE state;
-    std::chrono::time_point<std::chrono::steady_clock> timestamp; // using long form for clarity instead of alternative syntax ie Clock::time_point
+    std::chrono::time_point<std::chrono::steady_clock> timestamp; // using long form for clarity instead of alternative syntax ie Clock::time_point in header
 };
 
 std::atomic<bool> running = true;
@@ -122,7 +141,7 @@ int main(int argc, char* argv[])
             }
         }
 
-        Sleep(1);
+        robustSleep(0.001); // sleep 1 millisecond
     }
 
     // --- Cleanup ---
