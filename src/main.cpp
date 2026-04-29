@@ -3,7 +3,7 @@
 #include <Xinput.h>
 #include <ViGEm/Client.h>
 #include <iostream>
-#include <queue>
+#include <vector>
 #include <chrono>
 #include <atomic>
 #include <thread>
@@ -62,6 +62,11 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    std::vector<TimedState> gpad(delayMs + 1); //ie array size of 6 instead of delay 5ms for modulo 
+
+    int write_index = 0;
+    int read_index = 0;
+
     std::cout << "Delay: " << delayMs << " ms. To exit, use ctrl+c\n";
 
     // Enable high-resolution timer
@@ -98,8 +103,6 @@ int main(int argc, char* argv[])
         }
     }
 
-    std::queue<TimedState> buffer;
-
     // Outer loop, one millisecond means one state
     while (running)
     {
@@ -107,40 +110,33 @@ int main(int argc, char* argv[])
         XINPUT_STATE state{};
         if (XInputGetState(0, &state) == ERROR_SUCCESS)
         {
-            buffer.push({ state, std::chrono::steady_clock::now() }); // Record timestamp
+            gpad[write_index] = TimedState{ state, std::chrono::steady_clock::now() }; // Record timestamp
         }
 
-        // Inner loop, loops within millisecond interval
-        while (!buffer.empty())
-        {
-            auto& front = buffer.front(); // TimedState& front = buffer.front();
-                    
             auto now = std::chrono::steady_clock::now(); // std::chrono::time_point<std::chrono::steady_clock> now = std::chrono::steady_clock::now();
 
            
             double elapsed = std::chrono::duration<double, std::milli>(
-                now - front.timestamp).count();
+                now - gpad[read_index].timestamp).count();
 
             if (elapsed >= delayMs)
             {
                 XUSB_REPORT report{};
-                report.wButtons = front.state.Gamepad.wButtons;
-                report.bLeftTrigger = front.state.Gamepad.bLeftTrigger;
-                report.bRightTrigger = front.state.Gamepad.bRightTrigger;
-                report.sThumbLX = front.state.Gamepad.sThumbLX;
-                report.sThumbLY = front.state.Gamepad.sThumbLY;
-                report.sThumbRX = front.state.Gamepad.sThumbRX;
-                report.sThumbRY = front.state.Gamepad.sThumbRY;
+                report.wButtons = gpad[read_index].state.Gamepad.wButtons;
+                report.bLeftTrigger = gpad[read_index].state.Gamepad.bLeftTrigger;
+                report.bRightTrigger = gpad[read_index].state.Gamepad.bRightTrigger;
+                report.sThumbLX = gpad[read_index].state.Gamepad.sThumbLX;
+                report.sThumbLY = gpad[read_index].state.Gamepad.sThumbLY;
+                report.sThumbRX = gpad[read_index].state.Gamepad.sThumbRX;
+                report.sThumbRY = gpad[read_index].state.Gamepad.sThumbRY;
 
                 vigem_target_x360_update(client, target, report);
 
-                buffer.pop();
+                read_index = (read_index + 1) % gpad.size();
             }
-            else {
-                break;
-            }
-        }
 
+        write_index = (write_index + 1) % gpad.size();
+        
         robustSleep(0.001); // sleep 1 millisecond
     }
 

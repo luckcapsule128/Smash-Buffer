@@ -8,19 +8,20 @@ What smash-buffer does:
 
 With a physical xinput gamepad connected as XInput/0, the program will mirror whatever happens on XInput/0 and feeds it into a virtual instance XInput/1 adhering to a user-defined input buffer defined in milliseconds. The host would use XInput/1 instead of XInput/0 in this case.
 
-It's IMPORTANT that the command-line window stays not-minimized in order for the timing to work consistently. Otherwise, Windows may or may not de-prioritize it to refresh every millisecond. This will be looked into further for easier usage. Keeping it in the background should be fine.
-
-You can do a quick test while Smash-Buffer runs (remember not minimizing it):
+You can do a quick test while Smash-Buffer runs:
 https://gamepad-tester.net/
 
-It'll create Player #1 and #2 instances.  Assuming you have stable deadzones, a button push will generate a timestamp value for both #1 and #2.  Subtract these two values to get the input value you entered in the program. It consistently appears to post ~4-6ms above the user value which may be browser-related.  Locally, this does not occur.
+It'll create Player #1 and #2 instances.  Assuming you have stable deadzones, a button push will generate a timestamp value for both #1 and #2.  Subtract these two values to get the input value you entered in the program. It consistently appears to post within ~1-4ms of the user value which may or may not be browser-related.
 
 For Parsec users with a 4+ player group, host will reserve 2 Xinput slots 0 and 1, leaving the >=4th joiner without an Xinput assignment since Windows appears to limit controller to 4 players. In that case:
 1) Host can flip clients to Dualshock 4 instead of Xbox in Parsec host settings
 2) Host can install the program Hidhide (https://github.com/nefarius/HidHide) to "hide" the host physical gamepad instance from whichever program so the virtual gamepad instance begins at 0 instead of 1.
 
 Usage:  
-./Smash-Bufferx64.exe -enter millisecond value here-
+1) Plug in the first controller before others (that you want smash buffer to mirror)
+2) Go to the directory where smash buffer is
+3) Right click anywhere in that folder/directory window and click "open in terminal"
+4) Now in terminal type: ./Smash-Bufferx64.exe -enter millisecond value here-
 
 How to Build:  
 -Windows Visual Studio Build tool installation (https://visualstudio.microsoft.com/downloads/) -->select C++ desktop development-->tick boxes for MSVC Build Tools for x64/x86 (latest), Windows 11 SDK (10.0.xxxxx), C++ CMake tools for Windows, Testing tools core features - Build Tools, MSVC AddressSanitizer
